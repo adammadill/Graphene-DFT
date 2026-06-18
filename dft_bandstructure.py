@@ -64,8 +64,52 @@ while not converged:
                   n2 = g[i][1]
                   grid32[n1, n2] = wavefunctions[i][n]
              rho += 2*np.abs(np.fft.ifft2(grid32))**2 # spin gives 2
+        # exchange correlation potential
+        V_xc_grid = np.zeros((len(rho), len(rho)))
+        for i in range(len(rho)):
+            for j in range(len(rho)):
+                V_xc_grid[i][j] = - (3/np.pi)**(1/3) * rho[i][j]**(1/3)
 
-# exchange correlation potential
+        # hartree potential
 
-for i in range():
-     
+        rho_ft = np.fft.fft2(rho)
+        V_hartree_ft = np.zeros((len(rho), len(rho)), dtype=complex)
+
+        for i in range(len(rho)):
+            for j in range(len(rho)):
+                if i == 0 and j == 0:
+                    V_hartree_ft[i][j] = 0
+                else:
+                    if i < len(rho)//2:
+                        k1 = i
+                    else:
+                        k1 = i - len(rho)
+                    if j < len(rho)//2:
+                        k2 = j
+                    else:
+                        k2 = j - len(rho)
+                    Gx = k1*b1[0] + k2*b2[0]
+                    Gy = k1*b1[1] + k2*b2[1]
+                    G_squared = Gx**2 + Gy**2
+                    V_hartree_ft[i][j] = 4*np.pi*rho_ft[i][j]/G_squared
+        
+        V_hartree = np.fft.ifft2(V_hartree_ft).real
+
+        V_grid = V_xc_grid + V_hartree # grid potential xc and hartree
+
+        # convert V_grid to reciprocal space 49 by 49 grid
+
+        V_grid_ft = np.fft.fft2(V_grid)
+        matrix_49 = np.zeros((len(g), len(g)), dtype=complex)
+
+        for i in range(len(g)):
+                for j in range(len(g)):
+                    n1i = g[i][0]
+                    n2i = g[i][1]
+                    n1j = g[j][0]
+                    n2j = g[j][1]
+                    deltan1 = n1i - n1j
+                    deltan2 = n2i - n2j
+                    matrix_49[i, j] = V_grid_ft[deltan1, deltan2]
+
+        ham = K_matrix + P_matrix + matrix_49 # total hamiltonian
