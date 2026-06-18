@@ -116,4 +116,27 @@ while not converged:
 
         ham = K_matrix + P_matrix + matrix_49 # total hamiltonian
 
-        
+# bandstructure 
+
+Gamma = np.array([0.0, 0.0]) # Gamma point in reciprocal space
+M = 0.5*b1 # M point in reciprocal space
+K = (2*b1 + b2)/3 # K point in reciprocal space
+
+# gamma - M
+
+gammaMx = np.linspace(Gamma[0], M[0], 50)
+gammaMy = np.linspace(Gamma[1], M[1], 50)
+
+# M - K
+
+MKx = np.linspace(M[0], K[0], 50)
+MKy = np.linspace(M[1], K[1], 50)
+
+# K - Gamma
+
+KGx = np.linspace(K[0], Gamma[0], 50)
+KGy = np.linspace(K[1], Gamma[1], 50)
+
+
+
+
