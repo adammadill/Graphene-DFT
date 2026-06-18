@@ -15,10 +15,12 @@ b1 = 2*np.pi*np.array([a2[1], -a2[0]])/area # reciprocal lattice vectors
 b2 = 2*np.pi*np.array([-a1[1], a1[0]])/area
 
 g = []
+G_indices = []
 
 for n in range (-3,4):
     for m in range (-3,4):
         G = n*b1 + m*b2
+        G_indices.append([n,m])
         g.append(G)
 
 # making hamiltonian
@@ -60,8 +62,8 @@ while not converged:
         for n in range(4):
              grid32.fill(0.0)
              for i in range(len(g)):
-                  n1 = g[i][0]
-                  n2 = g[i][1]
+                  n1 = G_indices[i][0]
+                  n2 = G_indices[i][1]
                   grid32[n1, n2] = wavefunctions[i][n]
              rho += 2*np.abs(np.fft.ifft2(grid32))**2 # spin gives 2
         # exchange correlation potential
@@ -104,12 +106,14 @@ while not converged:
 
         for i in range(len(g)):
                 for j in range(len(g)):
-                    n1i = g[i][0]
-                    n2i = g[i][1]
-                    n1j = g[j][0]
-                    n2j = g[j][1]
+                    n1i = G_indices[i][0]
+                    n2i = G_indices[i][1]
+                    n1j = G_indices[j][0]
+                    n2j = G_indices[j][1]
                     deltan1 = n1i - n1j
                     deltan2 = n2i - n2j
                     matrix_49[i, j] = V_grid_ft[deltan1, deltan2]
 
         ham = K_matrix + P_matrix + matrix_49 # total hamiltonian
+
+        
