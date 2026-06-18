@@ -17,8 +17,8 @@ b2 = 2*np.pi*np.array([-a1[1], a1[0]])/area
 g = []
 G_indices = []
 
-for n in range (-3,4):
-    for m in range (-3,4):
+for n in range (-4,5):
+    for m in range (-4,5):
         G = n*b1 + m*b2
         G_indices.append([n,m])
         g.append(G)
@@ -101,7 +101,7 @@ while not converged:
 
         # convert V_grid to reciprocal space 49 by 49 grid
 
-        V_grid_ft = np.fft.fft2(V_grid)
+        V_grid_ft = np.fft.fft2(V_grid)/ (32 * 32)
         matrix_49 = np.zeros((len(g), len(g)), dtype=complex)
 
         for i in range(len(g)):
@@ -137,6 +137,102 @@ MKy = np.linspace(M[1], K[1], 50)
 KGx = np.linspace(K[0], Gamma[0], 50)
 KGy = np.linspace(K[1], Gamma[1], 50)
 
+all_kx = np.concatenate((gammaMx, MKx, KGx))
+all_ky = np.concatenate((gammaMy, MKy, KGy))
+
+k_points = np.column_stack((all_kx, all_ky))
+
+# new kinetic energy matrix for each k-point
+
+E_k_list = []
+
+for k in k_points:
+     K_new = np.zeros((len(g), len(g)), dtype=complex)
+     H_k = np.zeros((len(g), len(g)), dtype=complex)
+     for i in range(len(g)):
+            G_squared = (g[i][0] + k[0])**2 + (g[i][1] + k[1])**2
+            K_new[i][i] = G_squared*0.5
+     H_k = K_new + P_matrix + matrix_49
+     E_k, wavefunc_k = np.linalg.eigh(H_k)
+     E_k_list.append(E_k)
+
+energies_array = np.array(E_k_list)
+
+# plotting
+ 
+import matplotlib.pyplot as plt
+
+# band structure along high symmetry points
+
+plt.figure(figsize=(8,6))
+plt.plot(energies_array[:, :6], color='blue')  # Plot the first band
+plt.xticks([0, 49, 99, 149], ['Γ', 'M', 'K', 'Γ'])
+plt.ylabel('Energy (eV?)')
+plt.title('Band Structure of Graphene')
+plt.show()
+
+# fermi surface
+
+k_x, k_y = np.meshgrid(np.linspace(-2.5, 2.5, 50), np.linspace(-2.5, 2.5, 50)) # pi/a placeholder
+
+kx_flat = k_x.flatten()
+ky_flat = k_y.flatten()
+
+energies_3d = []
+
+for i in range(len(kx_flat)):
+     kx=kx_flat[i]
+     ky=ky_flat[i]
+     K_new = np.zeros((len(g), len(g)), dtype=complex)
+
+     for j in range(len(g)):
+        G_squared = (g[j][0] + kx)**2 + (g[j][1] + ky)**2
+        K_new[j][j] = G_squared*0.5
+
+     H_k = K_new + P_matrix + matrix_49
+     E_k, wavefunc_k = np.linalg.eigh(H_k)
+     energies_3d.append(E_k)
+
+energies_3d_array = np.array(energies_3d)
+band3_grid = energies_3d_array[:, 3].reshape(k_x.shape) # third band
+band4_grid = energies_3d_array[:, 4].reshape(k_x.shape) # fourth band
+
+# fig = plt.figure()
+# ax = fig.add_subplot(projection='3d')
+
+# ax.plot_surface(k_x, k_y, band3_grid, cmap='viridis')
+
+# ax.plot_surface(k_x, k_y, band4_grid, cmap='plasma')
+
+# ax.set_xlabel('kx')
+# ax.set_ylabel('ky')
+# ax.set_zlabel('Energy (eV)')
+
+# plt.show()
+
+import plotly.graph_objects as go
+
+fig = go.Figure()
+
+fig.add_trace(go.Surface(x=k_x, y=k_y, z=band3_grid, colorscale='Viridis', showscale=False))
+
+fig.add_trace(go.Surface(x=k_x, y=k_y, z=band4_grid, colorscale='Plasma', showscale=False))
+
+fig.update_layout(
+    title='3D Band Structure of Graphene',
+    scene=dict(
+        xaxis_title='kx',
+        yaxis_title='ky',
+        zaxis_title='Energy (eV)'
+    ),
+    width=800,
+    height=800
+)
+
+# Save the 3D plot as an interactive webpage file
+fig.write_html("graphene_3d_bands.html")
+
+#compare aliasing effect
 
 
 
