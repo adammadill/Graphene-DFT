@@ -165,11 +165,12 @@ import matplotlib.pyplot as plt
 # band structure along high symmetry points
 
 plt.figure(figsize=(8,6))
-plt.plot(energies_array[:, :6], color='blue')  # Plot the first band
+plt.plot(energies_array[:, :5], color='blue') 
 plt.xticks([0, 49, 99, 149], ['Γ', 'M', 'K', 'Γ'])
 plt.ylabel('Energy (eV?)')
 plt.title('Band Structure of Graphene')
-plt.show()
+plt.savefig('graphene_band_structure.png', dpi=300)
+#plt.show()
 
 # fermi surface
 
@@ -207,7 +208,6 @@ band4_grid = energies_3d_array[:, 4].reshape(k_x.shape) # fourth band
 # ax.set_xlabel('kx')
 # ax.set_ylabel('ky')
 # ax.set_zlabel('Energy (eV)')
-
 # plt.show()
 
 import plotly.graph_objects as go
