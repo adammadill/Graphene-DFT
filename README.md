@@ -5,3 +5,6 @@ The main idea of DFT is that the ground-state properties of a many-electron syst
 
 # Theory
 
+# Analysis
+
+[Click here to view the interactive 3D Graphene Band Structure](https://htmlpreview.github.io/?https://raw.githubusercontent.com/adammadill/Graphene-DFT/refs/heads/main/graphene_3d_bands.html)
