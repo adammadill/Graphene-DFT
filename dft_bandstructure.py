@@ -14,107 +14,109 @@ area = (a1[0]*a2[1] - a1[1]*a2[0]) # area of the unit cell
 b1 = 2*np.pi*np.array([a2[1], -a2[0]])/area # reciprocal lattice vectors
 b2 = 2*np.pi*np.array([-a1[1], a1[0]])/area
 
-g = []
-G_indices = []
+def calculate_bandstructure(N):
+    
+    g = []
+    G_indices = []
+    for n in range (-N,N+1):
+        for m in range (-N,N+1):
+            G = n*b1 + m*b2
+            G_indices.append([n,m])
+            g.append(G)
 
-for n in range (-4,5):
-    for m in range (-4,5):
-        G = n*b1 + m*b2
-        G_indices.append([n,m])
-        g.append(G)
+    # making hamiltonian
 
-# making hamiltonian
+    K_matrix = np.zeros((len(g), len(g)), dtype=complex) # kinetic
 
-K_matrix = np.zeros((len(g), len(g)), dtype=complex) # kinetic
+    for i in range  (len(g)):
+            G_squared = g[i][0]**2 + g[i][1]**2
+            K_matrix[i][i] = G_squared*0.5
 
-for i in range  (len(g)):
-        G_squared = g[i][0]**2 + g[i][1]**2
-        K_matrix[i][i] = G_squared*0.5
+    P_matrix = np.zeros((len(g), len(g)), dtype=complex) # potential
 
-P_matrix = np.zeros((len(g), len(g)), dtype=complex) # potential
+    for i in range (len(g)):
+        for j in range (len(g)):
+            G_diff = g[i] - g[j]
+            efactor = np.exp(-1j*np.dot(G_diff, c1)) + np.exp(-1j*np.dot(G_diff, c2))
+            V_G = - np.exp(-np.linalg.norm(G_diff)**2/0.1) # gaussian pseudopotential
+            P_matrix[i][j] = V_G*efactor
 
-for i in range (len(g)):
-     for j in range (len(g)):
-          G_diff = g[i] - g[j]
-          efactor = np.exp(-1j*np.dot(G_diff, c1)) + np.exp(-1j*np.dot(G_diff, c2))
-          V_G = - np.exp(-np.linalg.norm(G_diff)**2/0.1) # gaussian pseudopotential
-          P_matrix[i][j] = V_G*efactor
+    ham = K_matrix + P_matrix # hamiltonian
 
-ham = K_matrix + P_matrix # hamiltonian
+    # dft
 
-# dft
+    # 4 valence electrons per carbon and 2 carbon atoms per unit cell, so 8 valence electrons per unit cell
 
-# 4 valence electrons per carbon and 2 carbon atoms per unit cell, so 8 valence electrons per unit cell
+    converged = False
+    old_energy = float('inf')
 
-converged = False
-old_energy = float('inf')
+    while not converged:
+        energies, wavefunctions = np.linalg.eigh(ham)
+        current_total_energy = 2*np.sum(energies[:4]) # sum of the lowest 4 energies (2 electrons per spin)
+        energy_diff = np.abs(current_total_energy - old_energy)
+        if energy_diff < 1e-6:
+            converged = True
+        else:
+            rho = np.zeros((32,32))
+            old_energy = current_total_energy
+            grid32 = np.zeros((32,32), dtype=complex) # 32 to avoid nyquist and 32 for fft
+            for n in range(4):
+                grid32.fill(0.0)
+                for i in range(len(g)):
+                    n1 = G_indices[i][0]
+                    n2 = G_indices[i][1]
+                    grid32[n1, n2] = wavefunctions[i][n]
+                rho += 2*np.abs(np.fft.ifft2(grid32))**2 # spin gives 2
+            # exchange correlation potential
+            V_xc_grid = np.zeros((len(rho), len(rho)))
+            for i in range(len(rho)):
+                for j in range(len(rho)):
+                    V_xc_grid[i][j] = - (3/np.pi)**(1/3) * rho[i][j]**(1/3)
 
-while not converged:
-    energies, wavefunctions = np.linalg.eigh(ham)
-    current_total_energy = 2*np.sum(energies[:4]) # sum of the lowest 4 energies (2 electrons per spin)
-    energy_diff = np.abs(current_total_energy - old_energy)
-    if energy_diff < 1e-6:
-        converged = True
-    else:
-        rho = np.zeros((32,32))
-        old_energy = current_total_energy
-        grid32 = np.zeros((32,32), dtype=complex) # 32 to avoid nyquist and 32 for fft
-        for n in range(4):
-             grid32.fill(0.0)
-             for i in range(len(g)):
-                  n1 = G_indices[i][0]
-                  n2 = G_indices[i][1]
-                  grid32[n1, n2] = wavefunctions[i][n]
-             rho += 2*np.abs(np.fft.ifft2(grid32))**2 # spin gives 2
-        # exchange correlation potential
-        V_xc_grid = np.zeros((len(rho), len(rho)))
-        for i in range(len(rho)):
-            for j in range(len(rho)):
-                V_xc_grid[i][j] = - (3/np.pi)**(1/3) * rho[i][j]**(1/3)
+            # hartree potential
 
-        # hartree potential
+            rho_ft = np.fft.fft2(rho)
+            V_hartree_ft = np.zeros((len(rho), len(rho)), dtype=complex)
 
-        rho_ft = np.fft.fft2(rho)
-        V_hartree_ft = np.zeros((len(rho), len(rho)), dtype=complex)
-
-        for i in range(len(rho)):
-            for j in range(len(rho)):
-                if i == 0 and j == 0:
-                    V_hartree_ft[i][j] = 0
-                else:
-                    if i < len(rho)//2:
-                        k1 = i
+            for i in range(len(rho)):
+                for j in range(len(rho)):
+                    if i == 0 and j == 0:
+                        V_hartree_ft[i][j] = 0
                     else:
-                        k1 = i - len(rho)
-                    if j < len(rho)//2:
-                        k2 = j
-                    else:
-                        k2 = j - len(rho)
-                    Gx = k1*b1[0] + k2*b2[0]
-                    Gy = k1*b1[1] + k2*b2[1]
-                    G_squared = Gx**2 + Gy**2
-                    V_hartree_ft[i][j] = 4*np.pi*rho_ft[i][j]/G_squared
-        
-        V_hartree = np.fft.ifft2(V_hartree_ft).real
+                        if i < len(rho)//2:
+                            k1 = i
+                        else:
+                            k1 = i - len(rho)
+                        if j < len(rho)//2:
+                            k2 = j
+                        else:
+                            k2 = j - len(rho)
+                        Gx = k1*b1[0] + k2*b2[0]
+                        Gy = k1*b1[1] + k2*b2[1]
+                        G_squared = Gx**2 + Gy**2
+                        V_hartree_ft[i][j] = 4*np.pi*rho_ft[i][j]/G_squared
+            
+            V_hartree = np.fft.ifft2(V_hartree_ft).real
 
-        V_grid = V_xc_grid + V_hartree # grid potential xc and hartree
+            V_grid = V_xc_grid + V_hartree # grid potential xc and hartree
 
-        # convert V_grid to reciprocal space 49 by 49 grid
+            # convert V_grid to reciprocal space N by N grid
 
-        V_grid_ft = np.fft.fft2(V_grid)/ (32 * 32)
-        matrix_49 = np.zeros((len(g), len(g)), dtype=complex)
+            V_grid_ft = np.fft.fft2(V_grid)/ (32 * 32)
+            matrix_N = np.zeros((len(g), len(g)), dtype=complex)
 
-        for i in range(len(g)):
-                for j in range(len(g)):
-                    n1i = G_indices[i][0]
-                    n2i = G_indices[i][1]
-                    n1j = G_indices[j][0]
-                    n2j = G_indices[j][1]
-                    deltan1 = n1i - n1j
-                    deltan2 = n2i - n2j
-                    matrix_49[i, j] = V_grid_ft[deltan1, deltan2]
+            for i in range(len(g)):
+                    for j in range(len(g)):
+                        n1i = G_indices[i][0]
+                        n2i = G_indices[i][1]
+                        n1j = G_indices[j][0]
+                        n2j = G_indices[j][1]
+                        deltan1 = n1i - n1j
+                        deltan2 = n2i - n2j
+                        matrix_N[i, j] = V_grid_ft[deltan1, deltan2]
 
-        ham = K_matrix + P_matrix + matrix_49 # total hamiltonian
+            ham = K_matrix + P_matrix + matrix_N # total hamiltonian
+    return P_matrix, matrix_N, g
 
 # bandstructure 
 
@@ -142,17 +144,18 @@ all_ky = np.concatenate((gammaMy, MKy, KGy))
 
 k_points = np.column_stack((all_kx, all_ky))
 
-# new kinetic energy matrix for each k-point
+# new kinetic energy matrix for each k-point for N=3
 
 E_k_list = []
+P_matrix_3, matrix_N_3, g_3 = calculate_bandstructure(3)
 
 for k in k_points:
-     K_new = np.zeros((len(g), len(g)), dtype=complex)
-     H_k = np.zeros((len(g), len(g)), dtype=complex)
-     for i in range(len(g)):
-            G_squared = (g[i][0] + k[0])**2 + (g[i][1] + k[1])**2
+     K_new = np.zeros((len(g_3), len(g_3)), dtype=complex)
+     H_k = np.zeros((len(g_3), len(g_3)), dtype=complex)
+     for i in range(len(g_3)):
+            G_squared = (g_3[i][0] + k[0])**2 + (g_3[i][1] + k[1])**2
             K_new[i][i] = G_squared*0.5
-     H_k = K_new + P_matrix + matrix_49
+     H_k = K_new + P_matrix_3 + matrix_N_3
      E_k, wavefunc_k = np.linalg.eigh(H_k)
      E_k_list.append(E_k)
 
@@ -172,7 +175,7 @@ plt.title('Band Structure of Graphene')
 plt.savefig('graphene_band_structure.png', dpi=300)
 #plt.show()
 
-# fermi surface
+# fermi surface for N=3
 
 k_x, k_y = np.meshgrid(np.linspace(-2.5, 2.5, 50), np.linspace(-2.5, 2.5, 50)) # pi/a placeholder
 
@@ -184,13 +187,13 @@ energies_3d = []
 for i in range(len(kx_flat)):
      kx=kx_flat[i]
      ky=ky_flat[i]
-     K_new = np.zeros((len(g), len(g)), dtype=complex)
+     K_new = np.zeros((len(g_3), len(g_3)), dtype=complex)
 
-     for j in range(len(g)):
-        G_squared = (g[j][0] + kx)**2 + (g[j][1] + ky)**2
+     for j in range(len(g_3)):
+        G_squared = (g_3[j][0] + kx)**2 + (g_3[j][1] + ky)**2
         K_new[j][j] = G_squared*0.5
 
-     H_k = K_new + P_matrix + matrix_49
+     H_k = K_new + P_matrix_3 + matrix_N_3
      E_k, wavefunc_k = np.linalg.eigh(H_k)
      energies_3d.append(E_k)
 
@@ -232,7 +235,5 @@ fig.update_layout(
 # Save the 3D plot as an interactive webpage file
 fig.write_html("graphene_3d_bands.html")
 
-#compare aliasing effect
-
-
+#compare aliasing effect with matrix size
 
