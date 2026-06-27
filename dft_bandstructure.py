@@ -6,7 +6,7 @@ a = 2.46 # lattice parameter
 a1 = np.array([a*np.sqrt(3)/2, a*1/2]) # lattice vectors
 a2 = np.array([a*np.sqrt(3)/2, -a*1/2])
 
-c1 = np.array([0,0])
+c1 = np.array([0,0]) # carbon atom positions in unit cell
 c2 = np.array([a/np.sqrt(3), 0])
 
 area = (a1[0]*a2[1] - a1[1]*a2[0]) # area of the unit cell
@@ -26,11 +26,11 @@ def calculate_bandstructure(N):
 
     # making hamiltonian
 
-    K_matrix = np.zeros((len(g), len(g)), dtype=complex) # kinetic
+    #K_matrix = np.zeros((len(g), len(g)), dtype=complex) # kinetic
 
-    for i in range  (len(g)):
-            G_squared = g[i][0]**2 + g[i][1]**2
-            K_matrix[i][i] = G_squared*0.5
+    # for i in range  (len(g)):
+    #         G_squared = g[i][0]**2 + g[i][1]**2
+    #         K_matrix[i][i] = G_squared*0.5
 
     P_matrix = np.zeros((len(g), len(g)), dtype=complex) # potential
 
@@ -41,7 +41,7 @@ def calculate_bandstructure(N):
             V_G = - np.exp(-np.linalg.norm(G_diff)**2/0.1) # gaussian pseudopotential
             P_matrix[i][j] = V_G*efactor
 
-    ham = K_matrix + P_matrix # hamiltonian
+    ham = P_matrix # hamiltonian took out K 
 
     # dft
 
@@ -115,7 +115,7 @@ def calculate_bandstructure(N):
                         deltan2 = n2i - n2j
                         matrix_N[i, j] = V_grid_ft[deltan1, deltan2]
 
-            ham = K_matrix + P_matrix + matrix_N # total hamiltonian
+            ham = P_matrix + matrix_N # total hamiltonian, took out K
     return P_matrix, matrix_N, g
 
 # bandstructure 
@@ -236,4 +236,4 @@ fig.update_layout(
 fig.write_html("graphene_3d_bands.html")
 
 #compare aliasing effect with matrix size
-
+#compare to real bandstructure of graphene from literature
