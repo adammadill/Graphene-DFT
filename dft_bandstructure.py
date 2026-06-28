@@ -38,7 +38,7 @@ def calculate_bandstructure(N):
         for j in range (len(g)):
             G_diff = g[i] - g[j]
             efactor = np.exp(-1j*np.dot(G_diff, c1)) + np.exp(-1j*np.dot(G_diff, c2))
-            V_G = - np.exp(-np.linalg.norm(G_diff)**2/0.1) # gaussian pseudopotential
+            V_G = - np.exp(-np.linalg.norm(G_diff)**2/0.1) # gaussian pseudopotential as first approximation
             P_matrix[i][j] = V_G*efactor
 
     ham = P_matrix # hamiltonian took out K 
@@ -48,7 +48,7 @@ def calculate_bandstructure(N):
     # 4 valence electrons per carbon and 2 carbon atoms per unit cell, so 8 valence electrons per unit cell
 
     converged = False
-    old_energy = float('inf')
+    old_energy = float('inf') # set to infinity to make sure first iteration runs
 
     while not converged:
         energies, wavefunctions = np.linalg.eigh(ham)
@@ -94,7 +94,7 @@ def calculate_bandstructure(N):
                         Gx = k1*b1[0] + k2*b2[0]
                         Gy = k1*b1[1] + k2*b2[1]
                         G_squared = Gx**2 + Gy**2
-                        V_hartree_ft[i][j] = 4*np.pi*rho_ft[i][j]/G_squared
+                        V_hartree_ft[i][j] = 4*np.pi*rho_ft[i][j]/G_squared # by Poisson's equation in reciprocal space
             
             V_hartree = np.fft.ifft2(V_hartree_ft).real
 
