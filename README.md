@@ -15,8 +15,8 @@ and for the position of carbon atoms $(0, 0)$ and $(\frac{a}{\sqrt{3}}, 0)$, whe
 
 Now onto the main function to calculate the bandstructure. This is function of N, where N determines the number of lattice vectors that we include in the calculation. As such, increasing N should make the calculation more accurate. 
 
-The 
+The function begins by modelling the potential of each atom with a gaussian. This is just to start the loop, which starts with the eigen energies attributed to the approximation, then as long as it hasn't converged to a constant value it calculates a new electron density, exchange potential and Hartree potential. The Hartree potential models how electrons are repelled by eachother according to Poisson's equation (this is classical), and the exchange potential accounts for Pauli exclusion, ie. it corrects the Hartree potential (this is quantum). [Link for exchange potential wikipedia with equation used.](https://en.wikipedia.org/wiki/Local-density_approximation)
 
 # Analysis
 
-[Click here to view the interactive 3D Graphene Band Structure](https://htmlpreview.github.io/?https://raw.githubusercontent.com/adammadill/Graphene-DFT/refs/heads/main/graphene_3d_bands.html)
+[Click here to view the interactive 3D Graphene Band Structure.](https://htmlpreview.github.io/?https://raw.githubusercontent.com/adammadill/Graphene-DFT/refs/heads/main/graphene_3d_bands.html)
