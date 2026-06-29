@@ -38,7 +38,7 @@ def calculate_bandstructure(N):
         for j in range (len(g)):
             G_diff = g[i] - g[j]
             efactor = np.exp(-1j*np.dot(G_diff, c1)) + np.exp(-1j*np.dot(G_diff, c2))
-            V_G = - np.exp(-np.linalg.norm(G_diff)**2/0.1) # gaussian pseudopotential as first approximation
+            V_G = - np.exp(-np.linalg.norm(G_diff)**2/5.0) # gaussian pseudopotential as first approximation, number in denom can be changed
             P_matrix[i][j] = V_G*efactor
 
     ham = P_matrix # hamiltonian took out K 
@@ -144,18 +144,18 @@ all_ky = np.concatenate((gammaMy, MKy, KGy))
 
 k_points = np.column_stack((all_kx, all_ky))
 
-# new kinetic energy matrix for each k-point for N=3
+# new kinetic energy matrix for each k-point for N=5
 
 E_k_list = []
-P_matrix_3, matrix_N_3, g_3 = calculate_bandstructure(3)
+P_matrix_5, matrix_N_5, g_5 = calculate_bandstructure(5)
 
 for k in k_points:
-     K_new = np.zeros((len(g_3), len(g_3)), dtype=complex)
-     H_k = np.zeros((len(g_3), len(g_3)), dtype=complex)
-     for i in range(len(g_3)):
-            G_squared = (g_3[i][0] + k[0])**2 + (g_3[i][1] + k[1])**2
+     K_new = np.zeros((len(g_5), len(g_5)), dtype=complex)
+     H_k = np.zeros((len(g_5), len(g_5)), dtype=complex)
+     for i in range(len(g_5)):
+            G_squared = (g_5[i][0] + k[0])**2 + (g_5[i][1] + k[1])**2
             K_new[i][i] = G_squared*0.5
-     H_k = K_new + P_matrix_3 + matrix_N_3
+     H_k = K_new + P_matrix_5 + matrix_N_5
      E_k, wavefunc_k = np.linalg.eigh(H_k)
      E_k_list.append(E_k)
 
@@ -165,7 +165,7 @@ energies_array = np.array(E_k_list)
  
 import matplotlib.pyplot as plt
 
-# band structure along high symmetry points
+# band structure along high symmetry points for N=5
 
 plt.figure(figsize=(8,6))
 plt.plot(energies_array[:, :5], color='blue') 
@@ -175,7 +175,7 @@ plt.title('Band Structure of Graphene')
 plt.savefig('graphene_band_structure.png', dpi=300)
 #plt.show()
 
-# fermi surface for N=3
+# fermi surface for N=5
 
 k_x, k_y = np.meshgrid(np.linspace(-2.5, 2.5, 50), np.linspace(-2.5, 2.5, 50)) # pi/a placeholder
 
@@ -187,13 +187,13 @@ energies_3d = []
 for i in range(len(kx_flat)):
      kx=kx_flat[i]
      ky=ky_flat[i]
-     K_new = np.zeros((len(g_3), len(g_3)), dtype=complex)
+     K_new = np.zeros((len(g_5), len(g_5)), dtype=complex)
 
-     for j in range(len(g_3)):
-        G_squared = (g_3[j][0] + kx)**2 + (g_3[j][1] + ky)**2
+     for j in range(len(g_5)):
+        G_squared = (g_5[j][0] + kx)**2 + (g_5[j][1] + ky)**2
         K_new[j][j] = G_squared*0.5
 
-     H_k = K_new + P_matrix_3 + matrix_N_3
+     H_k = K_new + P_matrix_5 + matrix_N_5
      E_k, wavefunc_k = np.linalg.eigh(H_k)
      energies_3d.append(E_k)
 
