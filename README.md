@@ -17,6 +17,10 @@ Now onto the main function to calculate the bandstructure. This is function of N
 
 The function begins by modelling the potential of each atom with a gaussian. This is just to start the loop, which starts with the eigen energies attributed to the approximation, then as long as it hasn't converged to a constant value it calculates a new electron density, exchange potential and Hartree potential. The Hartree potential models how electrons are repelled by eachother according to Poisson's equation (this is classical), and the exchange potential accounts for Pauli exclusion, ie. it corrects the Hartree potential (this is quantum). [Link for exchange potential wikipedia with equation used.](https://en.wikipedia.org/wiki/Local-density_approximation)
 
+Below is a diagram of graphene that includes the symmetry points of interest:
+
+[Graphene Diagram. Credit: The Physics of Graphene, DOI: https://doi.org/10.1017/9781108617567.003.](urn_cambridge.org_id_binary_20200521094602162-0664_9781108617567_47164fig1_4b.png)
+
 # Analysis
 
 [Click here to view the interactive 3D Graphene Band Structure.](https://htmlpreview.github.io/?https://raw.githubusercontent.com/adammadill/Graphene-DFT/refs/heads/main/graphene_3d_bands.html)
