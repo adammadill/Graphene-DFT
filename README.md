@@ -19,7 +19,7 @@ The function begins by modelling the potential of each atom with a gaussian. Thi
 
 Below is a diagram of graphene that includes the symmetry points of interest:
 
-[Graphene Diagram. Credit: The Physics of Graphene, DOI: https://doi.org/10.1017/9781108617567.003.](urn_cambridge.org_id_binary_20200521094602162-0664_9781108617567_47164fig1_4b.png)
+![Graphene Diagram. Credit: The Physics of Graphene, DOI: https://doi.org/10.1017/9781108617567.003.](urn_cambridge.org_id_binary_20200521094602162-0664_9781108617567_47164fig1_4b.png)
 
 # Analysis
 
