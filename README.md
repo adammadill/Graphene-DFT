@@ -21,6 +21,12 @@ Below is a diagram of graphene that includes the symmetry points of interest:
 
 ![Graphene Diagram. Credit: The Physics of Graphene, DOI: https://doi.org/10.1017/9781108617567.003.](urn_cambridge.org_id_binary_20200521094602162-0664_9781108617567_47164fig1_4b.png)
 
+Credit:The Physics of Graphene, DOI: https://doi.org/10.1017/9781108617567.003 
+
 # Analysis
+
+Below is the bandstructure calculated with the code:
+
+![Graphene Bandstructure.](graphene_band_structure.png)
 
 [Click here to view the interactive 3D Graphene Band Structure.](https://htmlpreview.github.io/?https://raw.githubusercontent.com/adammadill/Graphene-DFT/refs/heads/main/graphene_3d_bands.html)
