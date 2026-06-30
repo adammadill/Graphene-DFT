@@ -11,15 +11,17 @@ $a_1 = (\frac{\sqrt{3}}{2}a, \frac{1}{2}a)$
 
 $a_2 = (\frac{\sqrt{3}}{2}a, -\frac{1}{2}a)$
 
-and for the position of carbon atoms $(0, 0)$ and $(\frac{a}{\sqrt{3}}, 0)$, where $a=2.46$ angstroms. The reciprocal lattice vectors are then found. Note that this is the extent of defining the material in this code. This can be easily changed to make the bandstructure of another material. 
+and for the position of carbon atoms $(0, 0)$ and $(\frac{a}{\sqrt{3}}, 0)$, where $a=2.46$ angstroms. The reciprocal lattice vectors are then found. Note that this is the extent of defining the material in this code (apart from interpreting the bandstructure where you realise there are 8 valence electrons per unit cell so the first 4 bands are filled). This can be easily changed to make the bandstructure of another material. 
 
 Now onto the main function to calculate the bandstructure. This is function of N, where N determines the number of lattice vectors that we include in the calculation. As such, increasing N should make the calculation more accurate. 
 
 The function begins by modelling the potential of each atom with a gaussian. This is just to start the loop, which starts with the eigen energies attributed to the approximation, then as long as it hasn't converged to a constant value it calculates a new electron density, exchange potential and Hartree potential. The Hartree potential models how electrons are repelled by eachother according to Poisson's equation (this is classical), and the exchange potential accounts for Pauli exclusion, ie. it corrects the Hartree potential (this is quantum). [Link for exchange potential wikipedia with equation used.](https://en.wikipedia.org/wiki/Local-density_approximation)
 
+NEED TO EXPLAIN K=0 KINETIC IN FUNCTION
+
 Below is a diagram of graphene that includes the symmetry points of interest:
 
-![Graphene Diagram. Credit: The Physics of Graphene, DOI: https://doi.org/10.1017/9781108617567.003.](urn_cambridge.org_id_binary_20200521094602162-0664_9781108617567_47164fig1_4b.png)
+![Graphene Diagram. Credit: The Physics of Graphene, DOI: https://doi.org/10.1017/9781108617567.003.](urn_cambridge.org_id_binary_20200521094602162-0664_9781108617567_47164fig1_4b.png) MAKE SURE THATS THE CURRENT ONE 
 
 Credit:The Physics of Graphene, DOI: https://doi.org/10.1017/9781108617567.003 
 
@@ -28,5 +30,7 @@ Credit:The Physics of Graphene, DOI: https://doi.org/10.1017/9781108617567.003
 Below is the bandstructure calculated with the code:
 
 ![Graphene Bandstructure.](graphene_band_structure.png)
+
+Note the characteristic Dirac point at K.  
 
 [Click here to view the interactive 3D Graphene Band Structure.](https://htmlpreview.github.io/?https://raw.githubusercontent.com/adammadill/Graphene-DFT/refs/heads/main/graphene_3d_bands.html)

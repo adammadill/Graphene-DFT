@@ -2,7 +2,7 @@ import numpy as np
 
 # grid
 
-a = 2.46 # lattice parameter
+a = 2.46/0.529177 # lattice parameter is 2.46 Angstroms, converted to Bohr radii for Hartree later then eV
 a1 = np.array([a*np.sqrt(3)/2, a*1/2]) # lattice vectors
 a2 = np.array([a*np.sqrt(3)/2, -a*1/2])
 
@@ -26,11 +26,11 @@ def calculate_bandstructure(N):
 
     # making hamiltonian
 
-    #K_matrix = np.zeros((len(g), len(g)), dtype=complex) # kinetic
+    K_0 = np.zeros((len(g), len(g)), dtype=complex) # kinetic
 
-    # for i in range  (len(g)):
-    #         G_squared = g[i][0]**2 + g[i][1]**2
-    #         K_matrix[i][i] = G_squared*0.5
+    for i in range  (len(g)):
+             G_squared = g[i][0]**2 + g[i][1]**2
+             K_0[i][i] = G_squared*0.5
 
     P_matrix = np.zeros((len(g), len(g)), dtype=complex) # potential
 
@@ -38,10 +38,10 @@ def calculate_bandstructure(N):
         for j in range (len(g)):
             G_diff = g[i] - g[j]
             efactor = np.exp(-1j*np.dot(G_diff, c1)) + np.exp(-1j*np.dot(G_diff, c2))
-            V_G = - np.exp(-np.linalg.norm(G_diff)**2/5.0) # gaussian pseudopotential as first approximation, number in denom can be changed
+            V_G = - np.exp(-np.linalg.norm(G_diff)**2/1.0) # gaussian pseudopotential as first approximation, number in denom can be changed
             P_matrix[i][j] = V_G*efactor
 
-    ham = P_matrix # hamiltonian took out K 
+    ham = P_matrix + K_0 
 
     # dft
 
@@ -57,16 +57,16 @@ def calculate_bandstructure(N):
         if energy_diff < 1e-6:
             converged = True
         else:
-            rho = np.zeros((32,32))
+            rho = np.zeros((64,64))
             old_energy = current_total_energy
-            grid32 = np.zeros((32,32), dtype=complex) # 32 to avoid nyquist and 32 for fft
+            grid64 = np.zeros((64,64), dtype=complex) # 64 to avoid nyquist and 64 for fft
             for n in range(4):
-                grid32.fill(0.0)
+                grid64.fill(0.0)
                 for i in range(len(g)):
                     n1 = G_indices[i][0]
                     n2 = G_indices[i][1]
-                    grid32[n1, n2] = wavefunctions[i][n]
-                rho += 2*np.abs(np.fft.ifft2(grid32))**2 # spin gives 2
+                    grid64[n1, n2] = wavefunctions[i][n]
+                rho += 2*np.abs(np.fft.ifft2(grid64))**2 # spin gives 2
             # exchange correlation potential
             V_xc_grid = np.zeros((len(rho), len(rho)))
             for i in range(len(rho)):
@@ -93,6 +93,7 @@ def calculate_bandstructure(N):
                             k2 = j - len(rho)
                         Gx = k1*b1[0] + k2*b2[0]
                         Gy = k1*b1[1] + k2*b2[1]
+                        # print("ran")
                         G_squared = Gx**2 + Gy**2
                         V_hartree_ft[i][j] = 4*np.pi*rho_ft[i][j]/G_squared # by Poisson's equation in reciprocal space
             
@@ -102,7 +103,7 @@ def calculate_bandstructure(N):
 
             # convert V_grid to reciprocal space N by N grid
 
-            V_grid_ft = np.fft.fft2(V_grid)/ (32 * 32)
+            V_grid_ft = np.fft.fft2(V_grid)/ (64 * 64) # normalize by grid size
             matrix_N = np.zeros((len(g), len(g)), dtype=complex)
 
             for i in range(len(g)):
@@ -115,7 +116,7 @@ def calculate_bandstructure(N):
                         deltan2 = n2i - n2j
                         matrix_N[i, j] = V_grid_ft[deltan1, deltan2]
 
-            ham = P_matrix + matrix_N # total hamiltonian, took out K
+            ham = P_matrix + matrix_N + K_0 # total hamiltonian, took out K
     return P_matrix, matrix_N, g
 
 # bandstructure 
@@ -124,40 +125,42 @@ Gamma = np.array([0.0, 0.0]) # Gamma point in reciprocal space
 M = 0.5*b1 # M point in reciprocal space
 K = (2*b1 + b2)/3 # K point in reciprocal space
 
-# gamma - M
+# gamma - K
 
-gammaMx = np.linspace(Gamma[0], M[0], 50)
-gammaMy = np.linspace(Gamma[1], M[1], 50)
+gammaKx = np.linspace(Gamma[0], K[0], 50)
+gammaKy = np.linspace(Gamma[1], K[1], 50)
 
-# M - K
+# K - M
 
-MKx = np.linspace(M[0], K[0], 50)
-MKy = np.linspace(M[1], K[1], 50)
+KMx = np.linspace(K[0], M[0], 50)
+KMy = np.linspace(K[1], M[1], 50)
 
-# K - Gamma
+# M - Gamma
 
-KGx = np.linspace(K[0], Gamma[0], 50)
-KGy = np.linspace(K[1], Gamma[1], 50)
+MGx = np.linspace(M[0], Gamma[0], 50)
+MGy = np.linspace(M[1], Gamma[1], 50)
 
-all_kx = np.concatenate((gammaMx, MKx, KGx))
-all_ky = np.concatenate((gammaMy, MKy, KGy))
+all_kx = np.concatenate((gammaKx, KMx, MGx))
+all_ky = np.concatenate((gammaKy, KMy, MGy))
 
 k_points = np.column_stack((all_kx, all_ky))
 
-# new kinetic energy matrix for each k-point for N=5
+# new kinetic energy matrix for each k-point for N=N
+
+N=8
 
 E_k_list = []
-P_matrix_5, matrix_N_5, g_5 = calculate_bandstructure(5)
+P_matrix_N, matrix_N_N, g_N = calculate_bandstructure(N)
 
 for k in k_points:
-     K_new = np.zeros((len(g_5), len(g_5)), dtype=complex)
-     H_k = np.zeros((len(g_5), len(g_5)), dtype=complex)
-     for i in range(len(g_5)):
-            G_squared = (g_5[i][0] + k[0])**2 + (g_5[i][1] + k[1])**2
+     K_new = np.zeros((len(g_N), len(g_N)), dtype=complex)
+     H_k = np.zeros((len(g_N), len(g_N)), dtype=complex)
+     for i in range(len(g_N)):
+            G_squared = (g_N[i][0] + k[0])**2 + (g_N[i][1] + k[1])**2
             K_new[i][i] = G_squared*0.5
-     H_k = K_new + P_matrix_5 + matrix_N_5
+     H_k = K_new + P_matrix_N + matrix_N_N
      E_k, wavefunc_k = np.linalg.eigh(H_k)
-     E_k_list.append(E_k)
+     E_k_list.append(E_k*27.2114) # convert from Hartree to eV
 
 energies_array = np.array(E_k_list)
 
@@ -165,19 +168,19 @@ energies_array = np.array(E_k_list)
  
 import matplotlib.pyplot as plt
 
-# band structure along high symmetry points for N=5
+# band structure along high symmetry points for N=N
 
 plt.figure(figsize=(8,6))
 plt.plot(energies_array[:, :5], color='blue') 
-plt.xticks([0, 49, 99, 149], ['Γ', 'M', 'K', 'Γ'])
-plt.ylabel('Energy (eV?)')
+plt.xticks([0, 49, 99, 149], ['Γ', 'K', 'M', 'Γ'])
+plt.ylabel('Energy (eV)')
 plt.title('Band Structure of Graphene')
 plt.savefig('graphene_band_structure.png', dpi=300)
 #plt.show()
 
 # fermi surface for N=5
 
-k_x, k_y = np.meshgrid(np.linspace(-2.5, 2.5, 50), np.linspace(-2.5, 2.5, 50)) # pi/a placeholder
+k_x, k_y = np.meshgrid(np.linspace(-2.5, 2.5, 50), np.linspace(-2.5, 2.5, 50)) # pi/a placeholder doesnt matter how big it is
 
 kx_flat = k_x.flatten()
 ky_flat = k_y.flatten()
@@ -187,15 +190,15 @@ energies_3d = []
 for i in range(len(kx_flat)):
      kx=kx_flat[i]
      ky=ky_flat[i]
-     K_new = np.zeros((len(g_5), len(g_5)), dtype=complex)
+     K_new = np.zeros((len(g_N), len(g_N)), dtype=complex)
 
-     for j in range(len(g_5)):
-        G_squared = (g_5[j][0] + kx)**2 + (g_5[j][1] + ky)**2
+     for j in range(len(g_N)):
+        G_squared = (g_N[j][0] + kx)**2 + (g_N[j][1] + ky)**2
         K_new[j][j] = G_squared*0.5
 
-     H_k = K_new + P_matrix_5 + matrix_N_5
+     H_k = K_new + P_matrix_N + matrix_N_N
      E_k, wavefunc_k = np.linalg.eigh(H_k)
-     energies_3d.append(E_k)
+     energies_3d.append(E_k*27.2114) # convert to eV
 
 energies_3d_array = np.array(energies_3d)
 band3_grid = energies_3d_array[:, 3].reshape(k_x.shape) # third band
