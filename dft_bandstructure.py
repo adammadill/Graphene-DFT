@@ -49,11 +49,16 @@ def calculate_bandstructure(N):
 
     converged = False
     old_energy = float('inf') # set to infinity to make sure first iteration runs
+    iteration = 0
 
     while not converged:
+        iteration += 1
         energies, wavefunctions = np.linalg.eigh(ham)
         current_total_energy = 2*np.sum(energies[:4]) # sum of the lowest 4 energies (2 electrons per spin)
+        if not np.isfinite(current_total_energy):
+            raise ValueError(f"Non-finite total energy at iteration {iteration}: {current_total_energy}")
         energy_diff = np.abs(current_total_energy - old_energy)
+        print(f"Iteration {iteration}: Energy diff: {energy_diff:.6f}", flush=True)
         if energy_diff < 1e-6:
             converged = True
         else:
@@ -65,8 +70,10 @@ def calculate_bandstructure(N):
                 for i in range(len(g)):
                     n1 = G_indices[i][0]
                     n2 = G_indices[i][1]
-                    grid64[n1, n2] = wavefunctions[i][n]
+                    grid64[n1 % 64, n2 % 64] = wavefunctions[i][n]
                 rho += 2*np.abs(np.fft.ifft2(grid64))**2 # spin gives 2
+            charge = np.sum(rho) # make sure rho is 8
+            rho = rho * (8/charge)
             # exchange correlation potential
             V_xc_grid = np.zeros((len(rho), len(rho)))
             for i in range(len(rho)):
@@ -95,7 +102,10 @@ def calculate_bandstructure(N):
                         Gy = k1*b1[1] + k2*b2[1]
                         # print("ran")
                         G_squared = Gx**2 + Gy**2
-                        V_hartree_ft[i][j] = 4*np.pi*rho_ft[i][j]/G_squared # by Poisson's equation in reciprocal space
+                        if G_squared < 1e-12:
+                            V_hartree_ft[i][j] = 0
+                        else:
+                            V_hartree_ft[i][j] = 4*np.pi*rho_ft[i][j]/G_squared # by Poisson's equation in reciprocal space
             
             V_hartree = np.fft.ifft2(V_hartree_ft).real
 
@@ -104,7 +114,7 @@ def calculate_bandstructure(N):
             # convert V_grid to reciprocal space N by N grid
 
             V_grid_ft = np.fft.fft2(V_grid)/ (64 * 64) # normalize by grid size
-            matrix_N = np.zeros((len(g), len(g)), dtype=complex)
+            matrix_N =  np.zeros((len(g), len(g)), dtype=complex)
 
             for i in range(len(g)):
                     for j in range(len(g)):
@@ -123,7 +133,7 @@ def calculate_bandstructure(N):
 
 Gamma = np.array([0.0, 0.0]) # Gamma point in reciprocal space
 M = 0.5*b1 # M point in reciprocal space
-K = (2*b1 + b2)/3 # K point in reciprocal space
+K = (b1 - b2)/3 # K point in reciprocal space
 
 # gamma - K
 
@@ -255,3 +265,4 @@ fig.write_html("graphene_3d_bands.html")
 
 #compare aliasing effect with matrix size
 #compare to real bandstructure of graphene from literature
+
