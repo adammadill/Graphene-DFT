@@ -152,6 +152,12 @@ N=8
 E_k_list = []
 P_matrix_N, matrix_N_N, g_N = calculate_bandstructure(N)
 
+# there is an issue where the energies are ordered incorrectly
+
+from scipy.optimize import linear_sum_assignment
+
+prev_wavefunc = None
+
 for k in k_points:
      K_new = np.zeros((len(g_N), len(g_N)), dtype=complex)
      H_k = np.zeros((len(g_N), len(g_N)), dtype=complex)
@@ -160,12 +166,21 @@ for k in k_points:
             K_new[i][i] = G_squared*0.5
      H_k = K_new + P_matrix_N + matrix_N_N
      E_k, wavefunc_k = np.linalg.eigh(H_k)
+     # Order the energies correctly:
+     if prev_wavefunc is not None:
+         overlaps = np.abs(np.dot(prev_wavefunc.conj().T, wavefunc_k)) # overlap with previous
+         #best_matches = np.argmax(overlaps, axis=1) # which new column matches old band
+         _, best_matches = linear_sum_assignment(-overlaps) # one to one matching
+         E_k = E_k[best_matches] # reorder
+         wavefunc_k = wavefunc_k[:, best_matches]
+     prev_wavefunc = wavefunc_k
+     #E_k = np.sort(E_k)
      E_k_list.append(E_k*27.2114) # convert from Hartree to eV
 
 energies_array = np.array(E_k_list)
 
 # plotting
- 
+
 import matplotlib.pyplot as plt
 
 # band structure along high symmetry points for N=N
